@@ -59,7 +59,7 @@ w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 ---
 
 > ### **2019-07-05 15.30pm: GitHub project created**  
->> **Program featurs:**
+>> **Program features:**
 >> * load map from .txt file
 >> * no map size limit
 >> * square map required
