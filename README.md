@@ -1,8 +1,21 @@
 # Mouse-Maze
 
-## Credits:
+## Credits
 
 #### [TheHeroOfNoOne](https://github.com/EetuAaltonen)
+
+## Characters
+
+| Character  | Value              |
+| -----------|:------------------:|
+| m          | Spawn              |
+| w          | Goal               |
+| p          | Path               |
+| #          | Wall               |
+| C (memory) | Last location      |
+| S (memory) | Out of array range |
+
+
 
 ## Requirements
 
@@ -36,10 +49,28 @@ w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 ## In Progess
 
 * Map generator
+* Lose condition
+* Memory use when respawn
+* Map rendering from memory when respawn
 
 ## News
+
 ---
 
-> 2019-07-05: GitHub project created
+> 2019-07-05 16.00pm: Mouse skills improved
+
+---
+
+> **2019-07-05 15.30pm: GitHub project created**
+> Program featurs:
+> * load map from .txt file
+> * no map size limit
+> * square map required
+> * win condition
+
+> Mouse Skills:
+> * path finding
+> * memory
+> * out of map index recognizing
 
 ---
