@@ -2,7 +2,7 @@
 
 ## Credits:
 
-* TheHeroOfNoOne
+#### [TheHeroOfNoOne](https://github.com/EetuAaltonen)
 
 ## Requirements
 
@@ -14,11 +14,12 @@ Add <map file name>.txt with valid map
     
 Map must be square. Validator in progress.
 
-> C:\location\>python mouse.py <map file name>.txt  
+> C:\location\>python mouse.py mapfile.txt  
 > Ctrl + C to abord
 
 ## Example Map
 
+```
 w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 #,p,p,#,p,#,#,p,#,p,#,p,p,p,p
 #,#,p,p,p,#,#,p,p,p,#,#,#,#,p
@@ -30,6 +31,7 @@ w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 #,#,#,#,p,#,#,#,p,#,p,#,#,#,#
 #,#,#,#,p,p,m,p,p,p,p,#,#,#,#
 #,#,#,#,#,#,#,#,#,#,#,#,#,#,#
+```
 
 ## In Progess
 
