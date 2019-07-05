@@ -63,7 +63,7 @@ w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 >> * load map from .txt file
 >> * no map size limit
 >> * square map required
->> * win condition
+>> * win condition  
 >> **Mouse Skills:**
 >> * path finding
 >> * memory
