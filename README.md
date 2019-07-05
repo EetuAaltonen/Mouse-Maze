@@ -25,7 +25,9 @@
 
 Add <map file name>.txt with valid map
     
-Map must be square. Validator in progress.
+<aside class="notice">
+    Map must be square.
+</aside>
 
 > C:\location\>python mouse.py mapfile.txt  
 > Ctrl + C to abord
@@ -49,6 +51,7 @@ w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 ## In Progess
 
 * Map generator
+* Map validator
 * Lose condition
 * Memory use when respawn
 * Map rendering from memory when respawn
@@ -57,11 +60,7 @@ w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 
 ---
 
-> 2019-07-05 16.00pm: Mouse skills improved
-
----
-
-> **2019-07-05 15.30pm: GitHub project created**
+> **2019-07-05 15.30pm: GitHub project created**  
 > Program featurs:
 > * load map from .txt file
 > * no map size limit
