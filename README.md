@@ -64,7 +64,7 @@ w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 >> * no map size limit
 >> * square map required
 >> * win condition
->>
+>
 >> **Mouse Skills:**
 >> * path finding
 >> * memory
