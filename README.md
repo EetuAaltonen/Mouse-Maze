@@ -25,7 +25,7 @@
 
 Add <map file name>.txt with valid map  
     
-Map must be square.  
+**Map must be square.**  
 
 > C:\location\>python mouse.py map.txt  
 > Ctrl + C to abord
