@@ -25,10 +25,9 @@
 
 Add <map file name>.txt with valid map  
     
-Map must be square.
-{: .alert .alert-warning}  
+Map must be square.  
 
-> C:\location\>python mouse.py mapfile.txt  
+> C:\location\>python mouse.py map.txt  
 > Ctrl + C to abord
 
 ## Example Map
@@ -60,21 +59,14 @@ w,p,#,#,p,p,p,p,#,p,p,p,#,#,#
 ---
 
 > **2019-07-05 15.30pm: GitHub project created**  
->> Program featurs:
+>> **Program featurs:**
 >> * load map from .txt file
 >> * no map size limit
 >> * square map required
 >> * win condition
-
->> Mouse Skills:
+>> **Mouse Skills:**
 >> * path finding
 >> * memory
 >> * out of map index recognizing
 
 ---
-
-<style>
-.alert-warning {
-  color: rgb(138,109,59) !important;
-}
-</style>
