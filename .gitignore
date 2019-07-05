@@ -1,0 +1,5 @@
+# Ignore map named
+/map
+
+# Ignore build folder
+/build
