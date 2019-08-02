@@ -3,12 +3,12 @@ import csv
 import time
 import os
 import collections
+import copy
 from collections import namedtuple
 from enum import Enum
 from enum import IntEnum
 
-MapData = collections.namedtuple('Mapdata', 'map spawn')
-delay = 2
+DELAY = 0.05
 
 class Dir(IntEnum):
     right = 0
@@ -16,29 +16,15 @@ class Dir(IntEnum):
     left = 2
     down = 3
     
-    def turnLeft(self):
-        value = self.value
-        value += 1
-        if (value > 3):
-            print(Dir.right)
-            return Dir.right
-        return Dir(value)
-    
-    def turnRight(self):
-        value = self.value
-        value -= 1
-        if value < 0:
-            return Dir.down
-        return Dir(value)
-    
 class State(Enum):
     start = 0
     search = 1
     reverse = 2
     stop = 3
+    remember = 3
 
 class Mouse(object):
-    map = None        
+    MAP = None        
     #------------------INIT------------------
     def __init__(self):
         self.memo = []
@@ -49,36 +35,6 @@ class Mouse(object):
         self.curShell = ["", "", "", ""]
         self.dir = Dir.right
         self.state = State.start
-    
-    #------------------SEARCH------------------
-    def searchPath(self):
-        x = self.pos[0]
-        y = self.pos[1]
-        map = Mouse.map
-        if map != None:
-            arrLen = len(map[0])
-            arrHeig = len(map)
-        
-            if map[y][x] == 'w':
-                self.state = State.stop
-                return
-            else:
-                if self.dir == Dir.right:
-                    self.moveRight()
-                #------------------UP------------------
-                elif self.dir == Dir.up:
-                    self.moveUp()
-                #------------------LEFT------------------
-                elif self.dir == Dir.left:
-                    self.moveLeft()
-                #------------------DOWN------------------
-                elif self.dir == Dir.down:
-                    self.moveDown()
-                return
-        else:
-            mouse.state = State.stop
-            print("No map")
-            return
     
     #------------------POS------------------
     def getPos(self):
@@ -99,9 +55,9 @@ class Mouse(object):
         #Set next shell with oppositDir
         if self.state == State.reverse:
             lastMemo = self.memo.pop()
-            self.curShell = lastMemo[1]
             self.pos = lastMemo[0]
-            if len(self.memo) == 0:
+            self.curShell = lastMemo[1]
+            if len(self.memo) == 0 or "C" in self.curShell:
                 self.curShell[self.oppositDir()] = "#"
             self.state = State.search
         else:
@@ -127,32 +83,84 @@ class Mouse(object):
     #------------------START-REVERSE------------------
     def startReverse(self):
         self.state = State.reverse
-        self.dir = self.getEmptyDir()
+        emptyDir = self.getEmptyDir()
+        if emptyDir < 0:
+            self.state = State.stop
+            print("Mouse didn't found out :(")
+            return
+        self.dir = emptyDir
         
     #------------------GET-EMPTY-DIR------------------
     def getEmptyDir(self):
         if self.state == State.reverse:
-            index = self.curShell.index("C")
+            if "C" in self.curShell:
+                return self.curShell.index("C")
+            return -1     
+        elif self.state == State.remember:
+            if "S" in self.curShell:
+                return self.curShell.index("S")
+            return -1
         else:
             if "" not in self.curShell:
                 return -1
-            index = self.curShell.index("")
-        return index
-        
-    #------------------RIGHT------------------
-    def moveRight(self):
+            return self.curShell.index("")
+    
+    #------------------GET-EMPTY-DIR------------------
+    def hasVisited(self):
+        return self.curShell[self.dir] == "#"
+    
+    #------------------SEARCH------------------
+    def searchPath(self):
         x = self.pos[0]
         y = self.pos[1]
-        _x = x+1
+        map = list(Mouse.MAP)
+        if map != None:
+            arrLen = len(map[0])
+            arrHeig = len(map)
         
-        map = Mouse.map
+            if map[y][x] == 'w':
+                self.state = State.stop
+                print("Mouse found out the way out!")
+                return
+            else:
+                self.move()
+                return
+        else:
+            mouse.state = State.stop
+            print("No map")
+            return
+    
+    #------------------MOVE------------------
+    def move(self):
+        x = self.pos[0]
+        y = self.pos[1]
+        _x = None
+        _y = None
+        
+        if self.dir == Dir.right:
+            _x = x+1
+        elif self.dir == Dir.up:
+            _y = y-1
+        elif self.dir == Dir.left:
+            _x = x-1
+        elif self.dir == Dir.down:
+            _y = y+1
+        
+        if _x != None:
+            #Right/Left
+            self.moveHorizontal(_x)
+        elif _y != None:
+            #Up/Down
+            self.moveVertical(_y)
+    
+    #------------------MOVE-HORIZONTAL------------------
+    def moveHorizontal(self, _x):
+        x = self.pos[0]
+        y = self.pos[1]
+        
+        map = list(Mouse.MAP)
         arrLen = len(map[0])
         arrHeig = len(map)
-        
-        emptyDir = self.getEmptyDir()
-        if emptyDir < 0:
-            self.startReverse()
-            return
         
         if _x == self.lastPos[0] and y == self.lastPos[1]:
             if self.state == State.reverse:
@@ -160,18 +168,32 @@ class Mouse(object):
             else:
                 self.dir = Dir(emptyDir)
         else:
-            if _x == arrLen:
+            if _x == arrLen or _x < 0:
                 self.curShell[self.dir] = "S"
                 emptyDir = self.getEmptyDir()
+                if emptyDir < 0:
+                    self.startReverse()
+                    self.memorize()
+                    return
                 self.dir = Dir(emptyDir)
             else:  
                 if map[y][_x] != "#":
                     if self.checkInMemory([_x, y]):
-                        self.curShell[self.dir] = "#"
+                        if self.curShell[self.dir] != "C":
+                            self.curShell[self.dir] = "#"
                         emptyDir = self.getEmptyDir()
                         if emptyDir < 0: 
+                            self.startReverse()
+                            self.memorize()
                             return
                         self.dir = Dir(emptyDir)
+                    elif self.hasVisited():
+                        emptyDir = self.getEmptyDir()
+                        if emptyDir < 0:
+                            self.startReverse()
+                            self.memorize()
+                            return
+                        self.dir = emptyDir
                     else:
                         self.memorize()
                         self.pos[0] = _x
@@ -179,23 +201,20 @@ class Mouse(object):
                     self.curShell[self.dir] = "#"
                     emptyDir = self.getEmptyDir()
                     if emptyDir < 0:
+                        self.startReverse()
+                        self.memorize()
                         return
                     self.dir = Dir(emptyDir)
-    
-    #------------------UP------------------
-    def moveUp(self):
+        
+    #------------------MOVE-VERTICAL------------------
+    def moveVertical(self, _y):
         x = self.pos[0]
         y = self.pos[1]
-        _y = y-1
         
-        map = Mouse.map
+        map = list(Mouse.MAP)
         arrLen = len(map[0])
         arrHeig = len(map)
         
-        emptyDir = self.getEmptyDir()
-        if emptyDir < 0:
-            self.startReverse()
-            return
         
         if x == self.lastPos[0] and _y == self.lastPos[1]:
             if self.state == State.reverse:
@@ -203,140 +222,95 @@ class Mouse(object):
             else:
                 self.dir = Dir(emptyDir)
         else:
-            if _y == arrHeig:
+            if _y == arrHeig or _y < 0:
                 self.curShell[self.dir] = "S"
                 emptyDir = self.getEmptyDir()
+                if emptyDir < 0:
+                    self.startReverse()
+                    self.memorize()
+                    return
                 self.dir = Dir(emptyDir)
             else:
                 if map[_y][x] != "#":
                     if self.checkInMemory([x, _y]):
-                        self.curShell[self.dir] = "#"
+                        if self.curShell[self.dir] != "C":
+                            self.curShell[self.dir] = "#"
                         emptyDir = self.getEmptyDir()
                         if emptyDir < 0: 
+                            self.startReverse()
+                            self.memorize()
                             return
                         self.dir = Dir(emptyDir)
-                    
-                    self.memorize()
-                    self.pos[1] = _y
+                    elif self.hasVisited():
+                        emptyDir = self.getEmptyDir()
+                        if emptyDir < 0:
+                            self.startReverse()
+                            self.memorize()
+                            return
+                        self.dir = emptyDir
+                    else:
+                        self.memorize()
+                        self.pos[1] = _y
                 else:
                     self.curShell[self.dir] = "#"
                     emptyDir = self.getEmptyDir()
                     if emptyDir < 0:
-                        return
-                    self.dir = Dir(emptyDir)
-    #------------------LEFT------------------
-    def moveLeft(self):
-        x = self.pos[0]
-        y = self.pos[1]
-        _x = x-1
-        
-        map = Mouse.map
-        arrLen = len(map[0])
-        arrHeig = len(map)
-        
-        emptyDir = self.getEmptyDir()
-        if emptyDir < 0:
-            self.startReverse()
-            return
-        
-        if _x == self.lastPos[0] and y == self.lastPos[1]:
-            if self.state == State.reverse:
-                self.memorize()
-            else:
-                self.dir = Dir(emptyDir)
-        else:
-            if _x < 0:
-                self.curShell[self.dir] = "S"
-                emptyDir = self.getEmptyDir()
-                self.dir = Dir(emptyDir)
-            else:
-                if map[y][_x] != "#":
-                    if self.checkInMemory([_x, y]):
-                        self.curShell[self.dir] = "#"
-                        emptyDir = self.getEmptyDir()
-                        if emptyDir < 0: 
-                            return
-                        self.dir = Dir(emptyDir)
-                    
-                    self.memorize()
-                    self.pos[0] = _x
-                else:
-                    self.curShell[self.dir] = "#"
-                    emptyDir = self.getEmptyDir()
-                    if emptyDir < 0:
-                        return
-                    self.dir = Dir(emptyDir)
-    #------------------DOWN------------------
-    def moveDown(self):
-        x = self.pos[0]
-        y = self.pos[1]
-        _y = y+1
-        
-        map = Mouse.map
-        arrLen = len(map[0])
-        arrHeig = len(map)
-        
-        emptyDir = self.getEmptyDir()
-        if emptyDir < 0:
-            self.startReverse()
-            return
-        
-        if x == self.lastPos[0] and _y == self.lastPos[1]:
-            if self.state == State.reverse:
-                self.memorize()
-            else:
-                self.dir = Dir(emptyDir)
-        else:
-            if _y == arrHeig:
-                self.curShell[self.dir] = "S"
-                emptyDir = self.getEmptyDir()
-                self.dir = Dir(emptyDir)
-            else:
-                if map[_y][x] != "#":
-                    if self.checkInMemory([x, _y]):
-                        self.curShell[self.dir] = "#"
-                        emptyDir = self.getEmptyDir()
-                        if emptyDir < 0: 
-                            return
-                        self.dir = Dir(emptyDir)
-                    
-                    self.memorize()
-                    self.pos[1] = _y
-                else:
-                    self.curShell[self.dir] = "#"
-                    emptyDir = self.getEmptyDir()
-                    if emptyDir < 0:
+                        self.startReverse()
+                        self.memorize()
                         return
                     self.dir = Dir(emptyDir)
 
 #------------------MAIN------------------
 def main():
     #Init
-    start = time.time()
     inputMap = sys.argv[1]
-    _mapping = mapping(inputMap)
-    Mouse.map = _mapping.map
+    mapping = doMapping(inputMap)
     m = Mouse()
-    m.pos = _mapping.spawn
+    Mouse.MAP = list(mapping[0])
+    
+    repeat = 1
+ 
+    m.spawn = copy.copy(mapping[1])
+    m.pos = copy.copy(mapping[1])
     m.state = State.search
     
-    #Main loop
-    while(m.state != State.stop):
-        drawMap(m)
-        time.sleep(delay)
-        m.searchPath()
+    spawnMouse(m, mapping, repeat, DELAY)
     
+    
+        
+#------------------SPAWN-MOUSE------------------
+def spawnMouse(m, mapping, repeat, delay):
+    #Main loop
+    start = time.time()
+    while(m.state != State.stop):
+        drawMap(m, list(mapping[0]))
+        time.sleep(delay)
+        m.searchPath()  
+        
     #Stop
     end = time.time()
-    print("Mouse found out!")
     print("Time spent {0}s".format(round(end-start,2)))
-    #drawMemo(m)
-    print(m.memo)
+    _resultMap = resultMapping(m, list(Mouse.MAP))
+    #print(m.memo)
+    
+    input("Press Enter to continue...")
+    if repeat == 1:
+        Mouse.MAP = list(_resultMap)
+        m = Mouse()
+        m.spawn = copy.copy(mapping[1])
+        m.pos = copy.copy(mapping[1])
+        m.state = State.remember
+        
+        inputMap = sys.argv[1]
+        mapping = doMapping(inputMap)
+        
+        repeat = 0
+        delay = 2 
+        spawnMouse(m, mapping, repeat, delay)
 
 #------------------DRAW-MAP------------------
-def drawMap(mouse):
+def drawMap(mouse, map):
     os.system("cls")
-    map = Mouse.map
     x = 0
     y = 0
     for row in map:
@@ -359,32 +333,18 @@ def drawMap(mouse):
         print(_row)
     print("Pos{0} | Dir[{1}] | State[{2}] ".format(mouse.pos, mouse.dir, mouse.state.name))
     print("curShell{0}".format(mouse.curShell))
+    print("lastPos{0}".format(mouse.lastPos))
     print("memo size {0}".format(len(mouse.memo)))
-    print("memo {0}".format(mouse.memo))
-
-#------------------DRAW-MEMO------------------
-def drawMemo(mouse):
-    map = mouse.memo
-    x = 0
-    y = 0
-    for row in map:
-        _row = ""
-        for shell in row:
-            print(shell)
-            x += 1
-        y += 1
-        x = 0
-        print("{0}".format(_row))
+    #print("memo {0}".format(mouse.memo))
             
 #------------------MAPPING------------------ 
-def mapping(map):
+def doMapping(map):
     _map = [[]]
     _spawn = [0,0]
     i = 0
     j = 0
     with open(map, encoding = 'utf-8', mode='r') as file:
         coordinates = str(file.read()).split(",")
-        print(coordinates)
         for shell in coordinates:
             if 'm' in shell:
                 _shell = shell.split("\n")
@@ -399,7 +359,33 @@ def mapping(map):
                 shell = _shell[1]
             _map[j].append(shell)
             i += 1
-            
-    return MapData(map=_map, spawn=_spawn)
+    return [_map, _spawn]
+
+#------------------RESULT-MAPPING------------------ 
+def resultMapping(mouse, map):
+    memo = mouse.memo
+    spawn = mouse.spawn
+    i = 0
+    j = 0
+    for mapRow in map:
+        for shell in mapRow:
+            for shellInMemo in memo:
+                pos = shellInMemo[0]
+                curShell = shellInMemo[1]
+                if pos[0] == i and pos[1] == j:
+                    mapRow[i] = "S"
+                    if i == spawn[0] and j == spawn[1]:
+                        mapRow[i] = "m" 
+            i += 1
+        j += 1
+        i = 0
+        for _shell in mapRow:
+            if _shell == "p":
+                mapRow[i] = "#"
+            i += 1
+        i = 0
+        print(mapRow)
+    return map
+
 if __name__ == "__main__":
     main()
